@@ -34,4 +34,4 @@ Dependency downloads are only triggered the first time a JavaScript engine is us
 If you find issues, please report them to me, not PAPI, 
 as they may have been introduced by my changes and I need to confirm who caused the issue.
 
-[Download](/releases)
+[Download](https://github.com/404Setup/Placeholder-JavascriptZ/releases)
