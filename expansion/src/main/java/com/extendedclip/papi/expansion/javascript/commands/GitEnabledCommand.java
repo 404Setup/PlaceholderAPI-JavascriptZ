@@ -1,7 +1,7 @@
 package com.extendedclip.papi.expansion.javascript.commands;
 
 import com.extendedclip.papi.expansion.javascript.ExpansionUtils;
-import com.extendedclip.papi.expansion.javascript.cloud.*;
+import com.extendedclip.papi.expansion.javascript.cloud.ActiveStateSetter;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommand;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommandRouter;
 import org.bukkit.command.CommandSender;
@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public final class GitEnabledCommand extends ExpansionCommand {
     private static final List<String> boolCompletion = Arrays.asList("true", "false");

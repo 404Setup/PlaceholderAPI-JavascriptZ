@@ -20,10 +20,13 @@
  */
 package com.extendedclip.papi.expansion.javascript;
 
-import com.extendedclip.papi.expansion.javascript.cloud.*;
+import com.extendedclip.papi.expansion.javascript.cloud.GitScriptManager;
 import com.extendedclip.papi.expansion.javascript.commands.router.CommandRegistrar;
-import com.extendedclip.papi.expansion.javascript.config.*;
+import com.extendedclip.papi.expansion.javascript.config.HeaderWriter;
+import com.extendedclip.papi.expansion.javascript.config.ScriptConfiguration;
+import com.extendedclip.papi.expansion.javascript.config.YamlScriptConfiguration;
 import com.extendedclip.papi.expansion.javascript.evaluator.*;
+import com.extendedclip.papi.expansion.javascript.evaluator.util.DependUtil;
 import com.extendedclip.papi.expansion.javascript.script.ConfigurationScriptLoader;
 import com.extendedclip.papi.expansion.javascript.script.ScriptLoader;
 import com.extendedclip.papi.expansion.javascript.script.ScriptRegistry;
@@ -40,11 +43,12 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 public class JavascriptExpansion extends PlaceholderExpansion implements Cacheable, Configurable {
-    public static final String AUTHOR = "clip";
+    public static final String AUTHOR = "clip,404X";
     public static final String IDENTIFIER = "javascript";
     public static final String VERSION = JavascriptExpansion.class.getPackage().getImplementationVersion();
 
@@ -55,10 +59,17 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
     private final GitScriptManager scriptManager = GitScriptManager.createDefault(getPlaceholderAPI());
 
     private String argumentSeparator = "";
-    private boolean useQuickJS = false;
     private ScriptLoader loader;
     private ScriptEvaluatorFactory scriptEvaluatorFactory;
     private CommandRegistrar commandRegistrar;
+
+    private static ScriptEvaluatorFactory createNashornEvaluatorFactory() {
+        try {
+            return NashornScriptEvaluatorFactory.create();
+        } catch (URISyntaxException | ReflectiveOperationException | NoSuchAlgorithmException | IOException exception) {
+            throw new RuntimeException("Failed to create fallback evaluator: Nashorn", exception); // Unrecoverable
+        }
+    }
 
     @NotNull
     @Override
@@ -86,17 +97,30 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
             ExpansionUtils.warnLog("Underscore character will not be allowed for splitting. Defaulting to ',' for this", null);
         }
 
-        useQuickJS = (boolean) get("use_quick_js", false);
+        ScriptEngine scriptEngine = ScriptEngine.fromString((String) get("js_engine", "quickjs"));
+        ExpansionUtils.infoLog("Using " + scriptEngine + " Engine");
+        ExpansionUtils.warnLog("Loading/downloading dependencies is about to begin. During this time, if the server lags, this is normal.");
+        ExpansionUtils.warnLog("If the server is unresponsive for a long time, check that you can connect to central smoothly. You may need to change the mirror in the configuration file.");
+        ExpansionUtils.warnLog("If you experience any issues, please report them at https://github.com/404Setup/Placeholder-JavaScriptZ/issues");
+        String mirror = (String) get("mirror", "https://repo.maven.apache.org/maven2/");
+        DependUtil.setMirror(mirror);
 
-        if (useQuickJS) {
-            this.scriptEvaluatorFactory = QuickJsScriptEvaluatorFactory.createWithFallback(i -> {
-                getPlaceholderAPI().getLogger().log(Level.WARNING, "Failed to use QuickJS Engine. Falling back to Nashorn");
-                return createNashornEvaluatorFactory();
-            });
-        } else {
-            this.scriptEvaluatorFactory =  createNashornEvaluatorFactory();
+        switch (scriptEngine) {
+            case QUICKJS:
+                DependLoader.loadQuickJs();
+                this.scriptEvaluatorFactory = QuickJsScriptEvaluatorFactory.createWithFallback(i -> {
+                    getPlaceholderAPI().getLogger().log(Level.WARNING, "Failed to use QuickJS Engine. Falling back to Nashorn");
+                    return createNashornEvaluatorFactory();
+                });
+                break;
+            case NASHORN:
+                DependLoader.loadNashorn();
+                this.scriptEvaluatorFactory = createNashornEvaluatorFactory();
+                break;
+            case V8:
+                DependLoader.loadV8();
+                this.scriptEvaluatorFactory = JavetScriptEvaluatorFactory.create();
         }
-
 
         final HeaderWriter headerWriter = HeaderWriter.fromJar(SELF_JAR_URL);
 
@@ -168,15 +192,43 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         defaults.put("argument_split", ",");
         defaults.put("github_script_downloads", false);
         defaults.put("enable_parse_command", false);
-        defaults.put("use_quick_js", false);
+        defaults.put("js_engine", ScriptEngine.QUICKJS.toString());
+        defaults.put("mirror", "https://repo.maven.apache.org/maven2/");
         return defaults;
     }
 
-    private static ScriptEvaluatorFactory createNashornEvaluatorFactory() {
-        try {
-            return NashornScriptEvaluatorFactory.create();
-        } catch (URISyntaxException | ReflectiveOperationException | NoSuchAlgorithmException | IOException exception) {
-            throw new RuntimeException("Failed to create fallback evaluator: Nashorn" ,exception); // Unrecoverable
+    private enum ScriptEngine {
+        NASHORN("nashorn"),
+        QUICKJS("quickjs"),
+        V8("v8");
+
+        private final String engineName;
+
+        ScriptEngine(String engineName) {
+            this.engineName = engineName;
+        }
+
+        public static String toString(ScriptEngine engine) {
+            return engine.getEngineName();
+        }
+
+        public static ScriptEngine fromString(String engineName) {
+            for (ScriptEngine engine : ScriptEngine.values()) {
+                if (engine.getEngineName().equalsIgnoreCase(engineName)) {
+                    return engine;
+                }
+            }
+
+            throw new IllegalArgumentException("Unknown engine name: " + engineName);
+        }
+
+        @Override
+        public String toString() {
+            return getEngineName();
+        }
+
+        public String getEngineName() {
+            return engineName;
         }
     }
 }

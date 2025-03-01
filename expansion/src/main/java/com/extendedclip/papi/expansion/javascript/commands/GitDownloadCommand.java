@@ -1,14 +1,16 @@
 package com.extendedclip.papi.expansion.javascript.commands;
 
 import com.extendedclip.papi.expansion.javascript.ExpansionUtils;
-import com.extendedclip.papi.expansion.javascript.cloud.*;
+import com.extendedclip.papi.expansion.javascript.cloud.GitScript;
+import com.extendedclip.papi.expansion.javascript.cloud.GitScriptManager;
+import com.extendedclip.papi.expansion.javascript.cloud.ScriptIndex;
+import com.extendedclip.papi.expansion.javascript.cloud.ScriptIndexProvider;
 import com.extendedclip.papi.expansion.javascript.cloud.download.PathSelector;
 import com.extendedclip.papi.expansion.javascript.cloud.download.ScriptDownloader;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommand;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommandRouter;
 import com.extendedclip.papi.expansion.javascript.config.ScriptConfiguration;
 import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 

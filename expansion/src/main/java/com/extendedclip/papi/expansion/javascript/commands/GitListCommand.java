@@ -7,10 +7,12 @@ import com.extendedclip.papi.expansion.javascript.cloud.ScriptIndex;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommand;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommandRouter;
 import org.bukkit.command.CommandSender;
-import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class GitListCommand extends ExpansionCommand {

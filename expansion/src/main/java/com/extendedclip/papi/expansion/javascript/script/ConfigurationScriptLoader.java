@@ -3,7 +3,6 @@ package com.extendedclip.papi.expansion.javascript.script;
 import com.extendedclip.papi.expansion.javascript.JavascriptPlaceholder;
 import com.extendedclip.papi.expansion.javascript.JavascriptPlaceholderFactory;
 import com.extendedclip.papi.expansion.javascript.config.ScriptConfiguration;
-import com.extendedclip.papi.expansion.javascript.evaluator.ScriptEvaluatorFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

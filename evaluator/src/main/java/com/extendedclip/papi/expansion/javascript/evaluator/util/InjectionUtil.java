@@ -4,13 +4,10 @@ import com.extendedclip.papi.expansion.javascript.evaluator.LibraryInjectionExce
 import com.extendedclip.papi.expansion.javascript.evaluator.QuickJsScriptEvaluatorFactory;
 import io.github.slimjar.injector.loader.Injectable;
 import io.github.slimjar.injector.loader.InjectableFactory;
-import io.github.slimjar.resolver.data.Repository;
-import io.github.slimjar.resolver.mirrors.SimpleMirrorSelector;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -21,7 +18,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -99,5 +95,10 @@ public final class InjectionUtil {
 
     private static File getLibsFolder(final File selfFile) {
         return new File(selfFile.getParentFile(), "libraries");
+    }
+
+    public static File getLibsFolder() throws URISyntaxException {
+        final File selfFile = new File(SELF_JAR_URL.toURI());
+        return getLibsFolder(selfFile);
     }
 }

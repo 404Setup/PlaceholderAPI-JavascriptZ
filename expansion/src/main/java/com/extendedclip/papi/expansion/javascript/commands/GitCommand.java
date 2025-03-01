@@ -1,20 +1,17 @@
 package com.extendedclip.papi.expansion.javascript.commands;
 
 import com.extendedclip.papi.expansion.javascript.ExpansionUtils;
-import com.extendedclip.papi.expansion.javascript.cloud.*;
-import com.extendedclip.papi.expansion.javascript.cloud.download.PathSelector;
-import com.extendedclip.papi.expansion.javascript.cloud.download.ScriptDownloader;
+import com.extendedclip.papi.expansion.javascript.cloud.ActiveStateSetter;
 import com.extendedclip.papi.expansion.javascript.commands.router.CommandRouter;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommand;
 import org.bukkit.command.CommandSender;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public final class GitCommand extends ExpansionCommand {
     private static final String ARG_REFRESH = "refresh";

@@ -5,8 +5,6 @@ import com.extendedclip.papi.expansion.javascript.JavascriptExpansion;
 import com.extendedclip.papi.expansion.javascript.JavascriptPlaceholder;
 import com.extendedclip.papi.expansion.javascript.JavascriptPlaceholderFactory;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommand;
-import com.extendedclip.papi.expansion.javascript.config.ScriptConfiguration;
-import com.extendedclip.papi.expansion.javascript.evaluator.ScriptEvaluatorFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -58,7 +56,7 @@ public final class ParseCommand extends ExpansionCommand {
         }
 
         final String script = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-        final JavascriptPlaceholder placeholder = placeholderFactory.create( "parse-command", String.join(" ", script));
+        final JavascriptPlaceholder placeholder = placeholderFactory.create("parse-command", String.join(" ", script));
 
 
         if (!player.hasPlayedBefore() || player.getName() == null) {

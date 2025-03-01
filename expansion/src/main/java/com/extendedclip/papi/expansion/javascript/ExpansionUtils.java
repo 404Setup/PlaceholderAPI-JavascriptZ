@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 public class ExpansionUtils {
 
-    public static final String DEFAULT_ENGINE = "nashorn";
     public static final String PREFIX = "[PAPI] [Javascript-Expansion] ";
     private static final Logger logger = Bukkit.getLogger();
 
@@ -49,6 +48,10 @@ public class ExpansionUtils {
         if (throwable == null) {
             logger.log(Level.WARNING, prefix + log);
         } else logger.log(Level.WARNING, prefix + log, throwable);
+    }
+
+    public static void warnLog(String log) {
+        warnLog(log, null);
     }
 
     public static void errorLog(String log, Throwable throwable) {

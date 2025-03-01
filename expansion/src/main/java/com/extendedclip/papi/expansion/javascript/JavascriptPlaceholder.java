@@ -21,29 +21,21 @@
 package com.extendedclip.papi.expansion.javascript;
 
 
-
 import com.extendedclip.papi.expansion.javascript.evaluator.ScriptEvaluator;
 import com.extendedclip.papi.expansion.javascript.evaluator.ScriptEvaluatorFactory;
 import com.extendedclip.papi.expansion.javascript.script.ScriptData;
 import com.extendedclip.papi.expansion.javascript.script.data.PersistableData;
 import com.extendedclip.papi.expansion.javascript.script.data.YmlPersistableData;
 import me.clip.placeholderapi.PlaceholderAPI;
-import me.clip.placeholderapi.PlaceholderAPIPlugin;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 
 import javax.script.ScriptException;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -119,8 +111,9 @@ public final class JavascriptPlaceholder {
             try {
                 Object result = evaluator.execute(additionalBindings, parsedScript);
                 return result != null ? PlaceholderAPI.setBracketPlaceholders(player, result.toString()) : "";
-            } catch (RuntimeException | ScriptException exception) { // todo:: prepare specific exception and catch that instead of all runtime exceptions
-                ExpansionUtils.errorLog("An error occurred while executing the script '" + identifier , exception);
+            } catch (RuntimeException |
+                     ScriptException exception) { // todo:: prepare specific exception and catch that instead of all runtime exceptions
+                ExpansionUtils.errorLog("An error occurred while executing the script '" + identifier, exception);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             ExpansionUtils.errorLog("Argument out of bound while executing script '" + identifier + "':\n\t" + ex.getMessage(), null);

@@ -4,8 +4,10 @@ import com.extendedclip.papi.expansion.javascript.ExpansionUtils;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
-import java.nio.charset.Charset;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 

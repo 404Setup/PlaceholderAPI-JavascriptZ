@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public final class ExpansionCommandRouter extends CommandRouter {
     public static final String COMMAND_NAME = "jsexpansion";
     private static final String PERMISSION = "placeholderapi.js.admin";
-    private static final String DESCRIPTION = "JavaScript Expansion Commands";
+    private static final String DESCRIPTION = "JavaScriptZ Expansion Commands";
     private static final String USAGE = "/jsexpansion <sub-command> <params>";
     private static final List<String> ALIASES = Arrays.asList("javascriptexpansion", "jsexp");
     private static final Collection<String> HELP_HEADER = Arrays.asList(

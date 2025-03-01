@@ -2,17 +2,15 @@ package com.extendedclip.papi.expansion.javascript.commands.router;
 
 import com.extendedclip.papi.expansion.javascript.JavascriptExpansion;
 import com.extendedclip.papi.expansion.javascript.JavascriptPlaceholderFactory;
-import com.extendedclip.papi.expansion.javascript.script.ScriptLoader;
-import com.extendedclip.papi.expansion.javascript.script.ScriptRegistry;
 import com.extendedclip.papi.expansion.javascript.cloud.GitScriptManager;
 import com.extendedclip.papi.expansion.javascript.commands.*;
 import com.extendedclip.papi.expansion.javascript.config.ScriptConfiguration;
-import com.extendedclip.papi.expansion.javascript.evaluator.ScriptEvaluatorFactory;
+import com.extendedclip.papi.expansion.javascript.script.ScriptLoader;
+import com.extendedclip.papi.expansion.javascript.script.ScriptRegistry;
 import com.google.common.collect.ImmutableMap;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandMap;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
 import java.util.Map;

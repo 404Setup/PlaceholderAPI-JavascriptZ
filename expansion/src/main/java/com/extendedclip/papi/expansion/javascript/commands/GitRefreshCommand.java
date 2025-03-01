@@ -1,9 +1,7 @@
 package com.extendedclip.papi.expansion.javascript.commands;
 
 import com.extendedclip.papi.expansion.javascript.ExpansionUtils;
-import com.extendedclip.papi.expansion.javascript.cloud.GitScript;
 import com.extendedclip.papi.expansion.javascript.cloud.GitScriptIndexProvider;
-import com.extendedclip.papi.expansion.javascript.cloud.ScriptIndex;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommand;
 import com.extendedclip.papi.expansion.javascript.commands.router.ExpansionCommandRouter;
 import org.bukkit.command.CommandSender;

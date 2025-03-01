@@ -2,10 +2,11 @@ plugins {
     id 'java'
     id 'maven-publish'
 }
+
 allprojects {
     group = 'com.extendedclip.papi.expansion.javascript'
-    version = '2.1.3'
-    description = 'PAPI-Expansion-Javascript'
+    version = '2.1.4'
+    description = 'PAPI-Expansion-JavascriptZ'
 
     apply(plugin: 'java')
 }

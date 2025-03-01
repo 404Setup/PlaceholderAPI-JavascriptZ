@@ -30,6 +30,7 @@ public final class QuickJsScriptEvaluator implements ScriptEvaluator {
     private void bind(final QuackContext ctx, final String key, final Object value) {
         ctx.getGlobalObject().set(key, coerce(ctx, value));
     }
+
     private Object coerce(final QuackContext ctx, final Object value) {
         if (value.getClass().isArray()) {
             final Object[] array = (Object[]) value;
