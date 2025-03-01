@@ -1,4 +1,4 @@
-rootProject.name = 'javascript-expansion'
+rootProject.name = 'javascriptz-expansion'
 include 'evaluator'
 include 'evaluator-api'
 include 'expansion'
