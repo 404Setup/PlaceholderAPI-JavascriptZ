@@ -39,6 +39,7 @@ public class DependUtil {
     private final Path libsFolder;
     private final RepositorySystem repositorySystem;
     private final RepositorySystemSession session;
+
     public DependUtil() {
         try {
             this.libsFolder = InjectionUtil.getLibsFolder().toPath();
@@ -50,9 +51,7 @@ public class DependUtil {
     }
 
     public static void setMirror(String url) {
-        if (url == null) {
-            return;
-        }
+        if (url == null) return;
         try {
             new URI(url);
         } catch (URISyntaxException e) {

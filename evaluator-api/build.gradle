@@ -5,8 +5,8 @@ plugins {
 group 'com.extendedclip.papi.expansion.javascript'
 version '2.1.4'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 17
+targetCompatibility = 17
 
 repositories {
     mavenCentral()

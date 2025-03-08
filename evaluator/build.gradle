@@ -6,8 +6,8 @@ plugins {
 group 'com.extendedclip.papi.expansion.javascript'
 version '2.1.4'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 17
+targetCompatibility = 17
 
 repositories {
     mavenCentral()
@@ -32,6 +32,11 @@ dependencies {
     compileOnly("com.caoccao.javet:javet-v8-macos-arm64:4.1.1")
     compileOnly("com.caoccao.javet:javet-v8-macos-x86_64:4.1.1")
     compileOnly("com.caoccao.javet:javet-v8-windows-x86_64:4.1.1")
+    compileOnly("com.caoccao.javet:javet-node-linux-arm64:4.1.1")
+    compileOnly("com.caoccao.javet:javet-node-linux-x86_64:4.1.1")
+    compileOnly("com.caoccao.javet:javet-node-macos-arm64:4.1.1")
+    compileOnly("com.caoccao.javet:javet-node-macos-x86_64:4.1.1")
+    compileOnly("com.caoccao.javet:javet-node-windows-x86_64:4.1.1")
     // V8 end
     implementation("io.github.slimjar:slimjar:1.2.6")
 

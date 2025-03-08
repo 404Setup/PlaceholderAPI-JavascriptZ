@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 public class ExpansionUtils {
 
-    public static final String PREFIX = "[PAPI] [Javascript-Expansion] ";
+    public static final String PREFIX = "[PAPI] [JavascriptZ-Expansion] ";
     private static final Logger logger = Bukkit.getLogger();
 
     public static @NotNull String colorize(String s) {
@@ -69,8 +69,7 @@ public class ExpansionUtils {
     }
 
     protected static Object ymlToJavaObj(Object obj) {
-        if (obj instanceof MemorySection) {
-            MemorySection ymlMem = (MemorySection) obj;
+        if (obj instanceof MemorySection ymlMem) {
             if (ymlMem.isList(ymlMem.getCurrentPath())) {
                 ArrayList<Object> list = new ArrayList<>();
                 for (String entry : ymlMem.getKeys(true)) {

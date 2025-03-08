@@ -105,6 +105,8 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         String mirror = (String) get("mirror", "https://repo.maven.apache.org/maven2/");
         DependUtil.setMirror(mirror);
 
+        boolean v8UseGCBeforeEngineClose = (boolean) get("v8_use_gc_before_engine_close", false);
+
         switch (scriptEngine) {
             case QUICKJS:
                 DependLoader.loadQuickJs();
@@ -118,8 +120,11 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
                 this.scriptEvaluatorFactory = createNashornEvaluatorFactory();
                 break;
             case V8:
-                DependLoader.loadV8();
-                this.scriptEvaluatorFactory = JavetScriptEvaluatorFactory.create();
+                DependLoader.loadV8(false);
+                this.scriptEvaluatorFactory = JavetScriptEvaluatorFactory.create(v8UseGCBeforeEngineClose);
+            case V8Node:
+                DependLoader.loadV8(true);
+                this.scriptEvaluatorFactory = JavetScriptNodeEvaluatorFactory.create(v8UseGCBeforeEngineClose);
         }
 
         final HeaderWriter headerWriter = HeaderWriter.fromJar(SELF_JAR_URL);
@@ -193,6 +198,7 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         defaults.put("github_script_downloads", false);
         defaults.put("enable_parse_command", false);
         defaults.put("js_engine", ScriptEngine.QUICKJS.toString());
+        defaults.put("v8_use_gc_before_engine_close", false);
         defaults.put("mirror", "https://repo.maven.apache.org/maven2/");
         return defaults;
     }
@@ -200,7 +206,8 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
     private enum ScriptEngine {
         NASHORN("nashorn"),
         QUICKJS("quickjs"),
-        V8("v8");
+        V8("v8"),
+        V8Node("v8_node");
 
         private final String engineName;
 
