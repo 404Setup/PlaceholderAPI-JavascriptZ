@@ -101,7 +101,7 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         ExpansionUtils.infoLog("Using " + scriptEngine + " Engine");
         ExpansionUtils.warnLog("Loading/downloading dependencies is about to begin. During this time, if the server lags, this is normal.");
         ExpansionUtils.warnLog("If the server is unresponsive for a long time, check that you can connect to central smoothly. You may need to change the mirror in the configuration file.");
-        ExpansionUtils.warnLog("If you experience any issues, please report them at https://github.com/404Setup/Placeholder-JavaScriptZ/issues");
+        ExpansionUtils.warnLog("If you experience any issues, please report them at https://github.com/404Setup/PlaceholderAPI-JavaScriptZ/issues");
         String mirror = (String) get("mirror", "https://repo.maven.apache.org/maven2/");
         DependUtil.setMirror(mirror);
 
