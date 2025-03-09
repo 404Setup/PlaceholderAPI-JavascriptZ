@@ -60,7 +60,7 @@ public abstract class CommandRouter extends Command {
                                     cmd.getDescription()
                             )
                     )
-                    .collect(Collectors.toList());
+                    .toList();
             header.stream().map(CommandRouter::translateColors).forEach(sender::sendMessage);
             subCommandHelp.stream().map(CommandRouter::translateColors).forEach(sender::sendMessage);
             return true;
