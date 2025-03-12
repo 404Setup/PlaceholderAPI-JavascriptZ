@@ -73,7 +73,7 @@ public final class JavascriptPlaceholder {
     public String evaluate(final OfflinePlayer player, final String... args) {
         // A checker to deny all placeholders inside comment codes
         final Matcher matcher = pattern.matcher(script);
-        final StringBuffer buffer = new StringBuffer();
+        final StringBuilder buffer = new StringBuilder();
         while (matcher.find()) {
             final String matched = matcher.group(0);
             if (!matched.startsWith("%") || matched.startsWith("/*") || matched.startsWith("//")) continue;

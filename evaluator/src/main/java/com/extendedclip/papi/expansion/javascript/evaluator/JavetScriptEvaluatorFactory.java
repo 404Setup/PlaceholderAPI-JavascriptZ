@@ -54,9 +54,7 @@ public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory
         try {
             V8Runtime runtime = runtimeHolder.get();
             if (runtime != null) {
-                if (!runtime.isClosed()) {
-                    runtime.close();
-                }
+                if (!runtime.isClosed()) runtime.close();
                 runtimeHolder.remove();
             }
             enginePool.close();
