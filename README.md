@@ -1,3 +1,5 @@
+<img src="./papi-js-v8.png" alt="Logo" align="right" width="250">
+
 # JavaScriptZ-Expansion
 Adds javascript placeholders.
 
