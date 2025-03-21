@@ -9,8 +9,6 @@ and is fully compatible with previous JavaScript extensions.
 V8 may take up more memory, but it can bring very impressive response time 
 (in my test, for the same piece of code, V8 is nearly ten times faster than QuickJS)
 
-**NOTE**: Nashorn engine will not work with JVM 15 and above!
-
 ## Notes
 This is one of my interest forks, so it may be messy. 
 
