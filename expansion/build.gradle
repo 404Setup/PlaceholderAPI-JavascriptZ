@@ -28,7 +28,7 @@ dependencies {
     implementation project(':evaluator')
     implementation project(':evaluator-api')
     compileOnly 'org.spigotmc:spigot-api:1.16.5-R0.1-SNAPSHOT'
-    compileOnly 'me.clip:placeholderapi:2.10.9'
+    compileOnly 'me.clip:placeholderapi:2.11.6'
     compileOnly 'org.jetbrains:annotations:21.0.1'
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
