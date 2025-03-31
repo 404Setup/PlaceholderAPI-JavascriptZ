@@ -3,6 +3,7 @@ package com.extendedclip.papi.expansion.javascript.evaluator;
 import com.caoccao.javet.enums.JSRuntimeType;
 import com.caoccao.javet.exceptions.JavetException;
 import com.caoccao.javet.interop.V8Runtime;
+import com.caoccao.javet.interop.engine.IJavetEngine;
 import com.caoccao.javet.interop.engine.JavetEngineConfig;
 import com.caoccao.javet.interop.engine.JavetEnginePool;
 
@@ -10,40 +11,52 @@ import java.util.Map;
 
 public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory {
     private final JavetEnginePool<V8Runtime> enginePool;
-    private final ThreadLocal<V8Runtime> runtimeHolder;
 
-    private JavetScriptEvaluatorFactory(boolean gc, int poolSize) {
+    private JavetScriptEvaluatorFactory(JavetEngineConfig config) {
+        this.enginePool = new JavetEnginePool<>(config);
+    }
+
+    public static ScriptEvaluatorFactory create(boolean gc, int poolSize) {
         JavetEngineConfig config = new JavetEngineConfig();
         config.setJSRuntimeType(JSRuntimeType.V8);
         config.setAllowEval(true);
         config.setGCBeforeEngineClose(gc);
         config.setPoolMaxSize(poolSize);
 
-        this.enginePool = new JavetEnginePool<>(config);
-        this.runtimeHolder = new ThreadLocal<>();
-    }
-
-    public static ScriptEvaluatorFactory create(boolean gc, int poolSize) {
-        return new JavetScriptEvaluatorFactory(gc, poolSize);
+        return new JavetScriptEvaluatorFactory(config);
     }
 
     @Override
     public ScriptEvaluator create(final Map<String, Object> bindings) {
         try {
-            V8Runtime runtime = getOrCreateRuntime();
-            return new JavetScriptEvaluator(runtime, bindings);
+            IJavetEngine<V8Runtime> engine = enginePool.getEngine();
+            V8Runtime runtime = engine.getV8Runtime();
+
+            return new JavetScriptEvaluator(runtime, bindings) {
+                @Override
+                public void close() {
+                    try {
+                        super.close();
+
+                        if (runtime != null && !runtime.isClosed()) {
+                            try {
+                                runtime.lowMemoryNotification();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        if (engine != null && !engine.isClosed()) {
+                            engine.close();
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to close Javet evaluator", e);
+                    }
+                }
+            };
         } catch (JavetException e) {
             throw new RuntimeException("Failed to create Javet evaluator", e);
         }
-    }
-
-    private V8Runtime getOrCreateRuntime() throws JavetException {
-        V8Runtime runtime = runtimeHolder.get();
-        if (runtime == null || runtime.isClosed()) {
-            runtime = enginePool.getEngine().getV8Runtime();
-            runtimeHolder.set(runtime);
-        }
-        return runtime;
     }
 
     @Override
@@ -53,12 +66,9 @@ public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory
 
     private void dispose() {
         try {
-            V8Runtime runtime = runtimeHolder.get();
-            if (runtime != null) {
-                if (!runtime.isClosed()) runtime.close();
-                runtimeHolder.remove();
+            if (enginePool != null) {
+                enginePool.close();
             }
-            enginePool.close();
         } catch (JavetException e) {
             throw new RuntimeException("Failed to dispose Javet engine pool", e);
         }

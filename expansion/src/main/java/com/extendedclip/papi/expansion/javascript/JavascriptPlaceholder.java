@@ -32,6 +32,7 @@ import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.script.ScriptException;
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -110,10 +111,15 @@ public final class JavascriptPlaceholder {
             additionalBindings.put("OfflinePlayer", player);
             try {
                 Object result = evaluator.execute(additionalBindings, parsedScript);
+                if (evaluator instanceof Closeable closeable) {
+                    closeable.close();
+                }
                 return result != null ? PlaceholderAPI.setBracketPlaceholders(player, result.toString()) : "";
             } catch (RuntimeException |
                      ScriptException exception) { // todo:: prepare specific exception and catch that instead of all runtime exceptions
                 ExpansionUtils.errorLog("An error occurred while executing the script '" + identifier, exception);
+            } catch (IOException e) {
+                ExpansionUtils.errorLog("Error sent during execution engine recycling: ", e);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             ExpansionUtils.errorLog("Argument out of bound while executing script '" + identifier + "':\n\t" + ex.getMessage(), null);

@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'com.extendedclip.papi.expansion.javascript'
-version '2.1.5'
+version '2.1.6-SNAPSHOT'
 archivesBaseName = "JavascriptZ-Expansion"
 
 sourceCompatibility = 17
