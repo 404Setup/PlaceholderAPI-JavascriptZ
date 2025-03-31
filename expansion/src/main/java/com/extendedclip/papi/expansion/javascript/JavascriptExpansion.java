@@ -97,6 +97,7 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
             ExpansionUtils.warnLog("Underscore character will not be allowed for splitting. Defaulting to ',' for this", null);
         }
 
+        int v8_pool_size = getInt("v8_pool_size", 10);
         ScriptEngine scriptEngine = ScriptEngine.fromString((String) get("js_engine", "quickjs"));
         ExpansionUtils.infoLog("Using " + scriptEngine + " Engine");
         ExpansionUtils.warnLog("Loading/downloading dependencies is about to begin. During this time, if the server lags, this is normal.");
@@ -105,7 +106,7 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         String mirror = (String) get("mirror", "https://repo.maven.apache.org/maven2/");
         DependUtil.setMirror(mirror);
 
-        boolean v8UseGCBeforeEngineClose = (boolean) get("v8_use_gc_before_engine_close", false);
+        boolean v8UseGCBeforeEngineClose = getBoolean("v8_use_gc_before_engine_close", false);
 
         switch (scriptEngine) {
             case QUICKJS:
@@ -121,10 +122,10 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
                 break;
             case V8:
                 DependLoader.loadV8(false);
-                this.scriptEvaluatorFactory = JavetScriptEvaluatorFactory.create(v8UseGCBeforeEngineClose);
+                this.scriptEvaluatorFactory = JavetScriptEvaluatorFactory.create(v8UseGCBeforeEngineClose, v8_pool_size);
             case V8Node:
                 DependLoader.loadV8(true);
-                this.scriptEvaluatorFactory = JavetScriptNodeEvaluatorFactory.create(v8UseGCBeforeEngineClose);
+                this.scriptEvaluatorFactory = JavetScriptNodeEvaluatorFactory.create(v8UseGCBeforeEngineClose, v8_pool_size);
         }
 
         final HeaderWriter headerWriter = HeaderWriter.fromJar(SELF_JAR_URL);
@@ -152,7 +153,7 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         } catch (final IOException exception) {
             ExpansionUtils.errorLog("Failed to load scripts", exception);
         }
-        if ((boolean) get("github_script_downloads", false)) {
+        if (getBoolean("github_script_downloads", false)) {
             scriptManager.getIndexProvider().refreshIndex(scriptIndex -> {
                 long gitIndexed = scriptIndex.getCount();
                 ExpansionUtils.infoLog("Indexed " + gitIndexed + " gitscript" + ExpansionUtils.plural(Math.toIntExact(gitIndexed)));
@@ -199,6 +200,7 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         defaults.put("enable_parse_command", false);
         defaults.put("js_engine", ScriptEngine.QUICKJS.toString());
         defaults.put("v8_use_gc_before_engine_close", false);
+        defaults.put("v8_pool_size", 10);
         defaults.put("mirror", "https://repo.maven.apache.org/maven2/");
         return defaults;
     }

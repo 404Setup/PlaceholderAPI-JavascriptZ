@@ -12,18 +12,19 @@ public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory
     private final JavetEnginePool<V8Runtime> enginePool;
     private final ThreadLocal<V8Runtime> runtimeHolder;
 
-    private JavetScriptEvaluatorFactory(boolean gc) {
+    private JavetScriptEvaluatorFactory(boolean gc, int poolSize) {
         JavetEngineConfig config = new JavetEngineConfig();
         config.setJSRuntimeType(JSRuntimeType.V8);
         config.setAllowEval(true);
         config.setGCBeforeEngineClose(gc);
+        config.setPoolMaxSize(poolSize);
 
         this.enginePool = new JavetEnginePool<>(config);
         this.runtimeHolder = new ThreadLocal<>();
     }
 
-    public static ScriptEvaluatorFactory create(boolean gc) {
-        return new JavetScriptEvaluatorFactory(gc);
+    public static ScriptEvaluatorFactory create(boolean gc, int poolSize) {
+        return new JavetScriptEvaluatorFactory(gc, poolSize);
     }
 
     @Override
