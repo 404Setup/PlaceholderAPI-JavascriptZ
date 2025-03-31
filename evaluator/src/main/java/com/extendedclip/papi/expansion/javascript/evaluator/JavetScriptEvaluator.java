@@ -350,7 +350,7 @@ public class JavetScriptEvaluator implements ScriptEvaluator, Closeable {
             try {
                 runtimeReleaseHook.accept(this);
             } catch (Exception e) {
-                LOGGER.warning("Release hook failed to execute. " + e);
+                LOGGER.warn("Release hook failed to execute. " + e);
             }
         }
 

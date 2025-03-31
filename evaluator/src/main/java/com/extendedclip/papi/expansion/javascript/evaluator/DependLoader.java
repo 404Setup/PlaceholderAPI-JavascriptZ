@@ -2,13 +2,13 @@ package com.extendedclip.papi.expansion.javascript.evaluator;
 
 import com.extendedclip.papi.expansion.javascript.evaluator.util.DependUtil;
 import com.extendedclip.papi.expansion.javascript.evaluator.util.InjectionUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class DependLoader {
-    public static final Logger LOGGER = Logger.getLogger(DependLoader.class.getName());
+    public static final Logger LOGGER = LoggerFactory.getLogger("JavascriptZ");
 
     private DependLoader() {
     }
@@ -33,7 +33,7 @@ public class DependLoader {
 
             downloadAndInject(coordinates);
         } catch (RuntimeException e) {
-            LOGGER.log(Level.SEVERE, "Failed to load V8 dependencies", e);
+            LOGGER.error("Failed to load V8 dependencies", e);
         }
     }
 
@@ -65,10 +65,10 @@ public class DependLoader {
         try {
             DependUtil downloader = new DependUtil();
             List<String> jarFileNames = downloader.downloadDependencies(dependencies);
-            LOGGER.info(() -> "Downloaded files: " + jarFileNames);
+            LOGGER.info("Downloaded files: {}", jarFileNames);
             InjectionUtil.inject(jarFileNames);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to download and inject dependencies", e);
+            LOGGER.error("Failed to download and inject dependencies", e);
         }
     }
 

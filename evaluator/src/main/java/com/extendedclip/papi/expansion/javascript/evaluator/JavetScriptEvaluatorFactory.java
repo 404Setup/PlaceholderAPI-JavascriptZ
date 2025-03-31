@@ -18,27 +18,24 @@ import java.util.concurrent.TimeUnit;
 import static com.extendedclip.papi.expansion.javascript.evaluator.DependLoader.LOGGER;
 
 public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory, Closeable {
-    private final JavetEnginePool enginePool;
+    private final JavetEnginePool<V8Runtime> enginePool;
     private final ConcurrentHashMap<JavetScriptEvaluator, Boolean> activeEvaluators;
     private final ScheduledExecutorService cleanupService;
 
-    private final int poolSize;
-    private final int poolCleanupIntervalSeconds;
     private final boolean enableResourceTracking;
 
     private volatile boolean closed = false;
 
     public JavetScriptEvaluatorFactory(int poolSize, int poolCleanupIntervalSeconds, boolean enableResourceTracking, boolean gc) {
-        this.poolSize = Math.max(1, poolSize);
+        var poolSize1 = Math.max(1, poolSize);
 
-        this.poolCleanupIntervalSeconds = poolCleanupIntervalSeconds;
         this.enableResourceTracking = enableResourceTracking;
 
         JavetEngineConfig config = new JavetEngineConfig();
         config.setAllowEval(true);
         config.setGlobalName("globalThis");
         config.setJSRuntimeType(JSRuntimeType.V8);
-        config.setPoolMaxSize(this.poolSize);
+        config.setPoolMaxSize(poolSize1);
         config.setGCBeforeEngineClose(gc);
 
         this.enginePool = new JavetEnginePool<>(config);
@@ -51,11 +48,11 @@ public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory
             return thread;
         });
 
-        if (this.poolCleanupIntervalSeconds > 0) {
+        if (poolCleanupIntervalSeconds > 0) {
             this.cleanupService.scheduleAtFixedRate(
                     this::performCleanup,
-                    this.poolCleanupIntervalSeconds,
-                    this.poolCleanupIntervalSeconds,
+                    poolCleanupIntervalSeconds,
+                    poolCleanupIntervalSeconds,
                     TimeUnit.SECONDS
             );
         }
@@ -130,13 +127,13 @@ public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory
         }
 
         if (!activeEvaluators.isEmpty()) {
-            LOGGER.info("Closing " + activeEvaluators.size() + " active evaluators...");
+            LOGGER.info("Closing {} active evaluators...", activeEvaluators.size());
 
             for (JavetScriptEvaluator evaluator : activeEvaluators.keySet()) {
                 try {
                     evaluator.close();
                 } catch (Exception e) {
-                    LOGGER.fine("Closing evaluator failed: " + e.getMessage() + " ... ");
+                    LOGGER.error("Closing evaluator failed: " + e.getMessage() + " ... ");
                 }
             }
 
