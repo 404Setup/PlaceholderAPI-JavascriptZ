@@ -13,35 +13,63 @@ import java.lang.reflect.Array;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-public class JavetScriptEvaluator implements ScriptEvaluator, Closeable {
+import static com.extendedclip.papi.expansion.javascript.evaluator.DependLoader.LOGGER;
 
+public class JavetScriptEvaluator implements ScriptEvaluator, Closeable {
+    private static final ThreadLocal<Set<V8Value>> THREAD_V8_VALUES = ThreadLocal.withInitial(HashSet::new);
+    private static final ConcurrentHashMap<V8Runtime, Set<V8Value>> RUNTIME_VALUES = new ConcurrentHashMap<>();
+    private static final int BATCH_CLOSE_THRESHOLD = 100;
+    private static final int PERSISTENCE_THRESHOLD = 5;
     private final V8Runtime v8Runtime;
     private final Map<String, Object> bindings;
-    private final List<V8Value> managedV8Values;
+    private final Set<V8Value> managedV8Values;
+    private final Map<V8Value, Integer> valueUsageCounter = new HashMap<>();
+    private Consumer<JavetScriptEvaluator> runtimeReleaseHook;
+    private boolean closed = false;
 
     public JavetScriptEvaluator(final V8Runtime v8Runtime, final Map<String, Object> bindings) {
         this.v8Runtime = v8Runtime;
         this.bindings = bindings != null ? new HashMap<>(bindings) : new HashMap<>();
-        this.managedV8Values = new ArrayList<>();
+        this.managedV8Values = RUNTIME_VALUES.computeIfAbsent(v8Runtime, k -> Collections.newSetFromMap(new WeakHashMap<>()));
+    }
+
+    public static void performGlobalCleanup() {
+        THREAD_V8_VALUES.remove();
+
+        RUNTIME_VALUES.entrySet().removeIf(entry -> {
+            V8Runtime runtime = entry.getKey();
+            return runtime == null || runtime.isClosed();
+        });
     }
 
     protected <T extends V8Value> T trackV8Value(T value) {
         if (value != null) {
+            THREAD_V8_VALUES.get().add(value);
             managedV8Values.add(value);
+
+            valueUsageCounter.merge(value, 1, Integer::sum);
         }
         return value;
+    }
+
+    public void setRuntimeReleaseHook(Consumer<JavetScriptEvaluator> hook) {
+        this.runtimeReleaseHook = hook;
     }
 
     @Override
     public Object execute(final Map<String, Object> additionalBindings, final String script)
             throws EvaluatorException {
+        if (closed) {
+            throw new EvaluatorException("Evaluator has been closed");
+        }
+
         if (v8Runtime == null || v8Runtime.isClosed()) {
             throw new EvaluatorException("JavaScript runtime is not available");
         }
-
-        List<V8Value> tempV8Values = new ArrayList<>();
 
         try {
             applyBindings(bindings);
@@ -52,34 +80,67 @@ public class JavetScriptEvaluator implements ScriptEvaluator, Closeable {
 
             Object result = v8Runtime.getExecutor(script).execute();
 
-            if (result instanceof V8Value v8Result) {
-                tempV8Values.add(v8Result);
+            if (result != null) {
                 result = convertToJavaObject(result);
+                cleanupTemporaryValues();
             }
 
             return result;
         } catch (JavetException e) {
             throw new EvaluatorException("Script execution failed: " + e.getMessage(), e);
-        } finally {
-            closeV8Values(tempV8Values);
         }
     }
 
-    private void closeV8Values(List<V8Value> values) {
-        if (values == null || values.isEmpty()) {
+    private void cleanupTemporaryValues() {
+        Set<V8Value> threadValues = THREAD_V8_VALUES.get();
+
+        if (threadValues.size() < BATCH_CLOSE_THRESHOLD) {
             return;
         }
 
-        for (V8Value value : values) {
-            try {
-                if (value != null && !value.isClosed())
-                    value.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+        List<V8Value> valuesToClose = new ArrayList<>(threadValues.size());
+        for (V8Value value : threadValues) {
+            if (value != null && !value.isClosed() &&
+                    (valueUsageCounter.getOrDefault(value, 0) < PERSISTENCE_THRESHOLD)) {
+                valuesToClose.add(value);
             }
         }
 
-        values.clear();
+        int closedCount = closeV8ValuesEfficiently(valuesToClose);
+
+        if (closedCount > 0) {
+            valuesToClose.forEach(threadValues::remove);
+        }
+    }
+
+    private int closeV8ValuesEfficiently(List<V8Value> values) {
+        if (values == null || values.isEmpty()) {
+            return 0;
+        }
+
+        int closedCount = 0;
+        Map<Class<?>, List<V8Value>> valuesByType = new HashMap<>();
+
+        for (V8Value value : values) {
+            if (value == null || value.isClosed()) continue;
+
+            valuesByType.computeIfAbsent(value.getClass(), k -> new ArrayList<>()).add(value);
+        }
+
+        for (List<V8Value> typeValues : valuesByType.values()) {
+            try {
+                for (V8Value value : typeValues) {
+                    value.close();
+                    closedCount++;
+
+                    valueUsageCounter.remove(value);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to close V8Value batch", e);
+            }
+        }
+
+        return closedCount;
     }
 
     private void applyBindings(Map<String, Object> bindingsMap) throws JavetException {
@@ -149,7 +210,6 @@ public class JavetScriptEvaluator implements ScriptEvaluator, Closeable {
             v8Object.set(key, value.doubleValue());
         }
     }
-
 
     private void setMapValue(V8ValueObject v8Object, String key, Map<?, ?> mapValue) throws JavetException {
         V8ValueObject mapObj = trackV8Value(v8Runtime.createV8ValueObject());
@@ -262,6 +322,41 @@ public class JavetScriptEvaluator implements ScriptEvaluator, Closeable {
 
     @Override
     public void close() throws IOException {
-        closeV8Values(managedV8Values);
+        if (closed) {
+            return;
+        }
+
+        Set<V8Value> threadValues = THREAD_V8_VALUES.get();
+
+        List<V8Value> valuesToClose = new ArrayList<>();
+
+        for (V8Value value : threadValues) {
+            if (value != null && !value.isClosed()) {
+                valuesToClose.add(value);
+            }
+        }
+
+        closeV8ValuesEfficiently(valuesToClose);
+        threadValues.clear();
+        valueUsageCounter.clear();
+
+        if (v8Runtime != null) {
+            RUNTIME_VALUES.remove(v8Runtime);
+        }
+
+        closed = true;
+
+        if (runtimeReleaseHook != null) {
+            try {
+                runtimeReleaseHook.accept(this);
+            } catch (Exception e) {
+                LOGGER.warning("Release hook failed to execute. " + e);
+            }
+        }
+
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 }

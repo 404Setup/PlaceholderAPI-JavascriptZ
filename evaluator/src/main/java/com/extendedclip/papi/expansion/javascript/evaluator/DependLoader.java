@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DependLoader {
-    private static final Logger LOGGER = Logger.getLogger(DependLoader.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(DependLoader.class.getName());
 
     private DependLoader() {
     }

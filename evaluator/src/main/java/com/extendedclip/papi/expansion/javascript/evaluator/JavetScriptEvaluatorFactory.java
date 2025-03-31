@@ -7,55 +7,175 @@ import com.caoccao.javet.interop.engine.IJavetEngine;
 import com.caoccao.javet.interop.engine.JavetEngineConfig;
 import com.caoccao.javet.interop.engine.JavetEnginePool;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory {
-    private final JavetEnginePool<V8Runtime> enginePool;
+import static com.extendedclip.papi.expansion.javascript.evaluator.DependLoader.LOGGER;
 
-    private JavetScriptEvaluatorFactory(JavetEngineConfig config) {
+public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory, Closeable {
+    private final JavetEnginePool enginePool;
+    private final ConcurrentHashMap<JavetScriptEvaluator, Boolean> activeEvaluators;
+    private final ScheduledExecutorService cleanupService;
+
+    private final int poolSize;
+    private final int poolCleanupIntervalSeconds;
+    private final boolean enableResourceTracking;
+
+    private volatile boolean closed = false;
+
+    public JavetScriptEvaluatorFactory(int poolSize, int poolCleanupIntervalSeconds, boolean enableResourceTracking, boolean gc) {
+        this.poolSize = Math.max(1, poolSize);
+
+        this.poolCleanupIntervalSeconds = poolCleanupIntervalSeconds;
+        this.enableResourceTracking = enableResourceTracking;
+
+        JavetEngineConfig config = new JavetEngineConfig();
+        config.setAllowEval(true);
+        config.setGlobalName("globalThis");
+        config.setJSRuntimeType(JSRuntimeType.V8);
+        config.setPoolMaxSize(this.poolSize);
+        config.setGCBeforeEngineClose(gc);
+
         this.enginePool = new JavetEnginePool<>(config);
+
+        this.activeEvaluators = new ConcurrentHashMap<>();
+
+        this.cleanupService = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "javet-cleanup-thread");
+            thread.setDaemon(true);
+            return thread;
+        });
+
+        if (this.poolCleanupIntervalSeconds > 0) {
+            this.cleanupService.scheduleAtFixedRate(
+                    this::performCleanup,
+                    this.poolCleanupIntervalSeconds,
+                    this.poolCleanupIntervalSeconds,
+                    TimeUnit.SECONDS
+            );
+        }
     }
 
     public static ScriptEvaluatorFactory create(boolean gc, int poolSize) {
-        JavetEngineConfig config = new JavetEngineConfig();
-        config.setJSRuntimeType(JSRuntimeType.V8);
-        config.setAllowEval(true);
-        config.setGCBeforeEngineClose(gc);
-        config.setPoolMaxSize(poolSize);
-
-        return new JavetScriptEvaluatorFactory(config);
+        return new JavetScriptEvaluatorFactory(poolSize, 60, true, gc);
     }
 
-    @Override
-    public ScriptEvaluator create(final Map<String, Object> bindings) {
+    public ScriptEvaluator create() throws EvaluatorException {
+        return create(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public ScriptEvaluator create(Map<String, Object> bindings) throws EvaluatorException {
+        if (closed) {
+            throw new EvaluatorException("Factory has been closed");
+        }
+
         try {
             IJavetEngine<V8Runtime> engine = enginePool.getEngine();
             V8Runtime runtime = engine.getV8Runtime();
 
-            return new JavetScriptEvaluator(runtime, bindings) {
-                @Override
-                public void close() {
+            JavetScriptEvaluator evaluator = new JavetScriptEvaluator(runtime, bindings);
+
+            if (enableResourceTracking) {
+                activeEvaluators.put(evaluator, Boolean.TRUE);
+
+                evaluator.setRuntimeReleaseHook((ev) -> {
                     try {
-                        super.close();
+                        activeEvaluators.remove(ev);
 
-                        if (runtime != null && !runtime.isClosed()) {
-                            try {
-                                runtime.lowMemoryNotification();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        if (engine != null && !engine.isClosed()) {
-                            engine.close();
-                        }
+                        enginePool.releaseEngine(engine);
                     } catch (Exception e) {
-                        throw new RuntimeException("Failed to close Javet evaluator", e);
+                        throw new RuntimeException("Failed to release V8 runtime", e);
                     }
+                });
+            }
+
+            return evaluator;
+        } catch (Exception e) {
+            throw new EvaluatorException("Create JavaScript evaluator failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void performCleanup() {
+        try {
+            JavetScriptEvaluator.performGlobalCleanup();
+
+            for (JavetScriptEvaluator evaluator : activeEvaluators.keySet()) {
+                if (evaluator.isClosed())
+                    activeEvaluators.remove(evaluator);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to perform resource cleanup", e);
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (closed) {
+            return;
+        }
+
+        closed = true;
+
+        try {
+            cleanupService.shutdown();
+            cleanupService.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to shutdown Javet cleanup service", e);
+        }
+
+        if (!activeEvaluators.isEmpty()) {
+            LOGGER.info("Closing " + activeEvaluators.size() + " active evaluators...");
+
+            for (JavetScriptEvaluator evaluator : activeEvaluators.keySet()) {
+                try {
+                    evaluator.close();
+                } catch (Exception e) {
+                    LOGGER.fine("Closing evaluator failed: " + e.getMessage() + " ... ");
                 }
-            };
-        } catch (JavetException e) {
-            throw new RuntimeException("Failed to create Javet evaluator", e);
+            }
+
+            activeEvaluators.clear();
+        }
+
+        try {
+            enginePool.close();
+            LOGGER.info("JavetScriptEvaluatorFactory is closed");
+        } catch (Exception e) {
+            throw new IOException("Closing JavetScriptEvaluatorFactory failed:", e);
+        }
+    }
+
+    public int getActiveEvaluatorsCount() {
+        return activeEvaluators.size();
+    }
+
+    public int getActiveEngineCount() {
+        return enginePool.getActiveEngineCount();
+    }
+
+    public int getIdleEngineCount() {
+        return enginePool.getIdleEngineCount();
+    }
+
+    public void resetPool() {
+        try {
+            for (JavetScriptEvaluator evaluator : activeEvaluators.keySet()) {
+                try {
+                    evaluator.close();
+                } catch (Exception ignore) {
+                }
+            }
+            activeEvaluators.clear();
+
+            enginePool.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to reset Javet engine pool", e);
         }
     }
 

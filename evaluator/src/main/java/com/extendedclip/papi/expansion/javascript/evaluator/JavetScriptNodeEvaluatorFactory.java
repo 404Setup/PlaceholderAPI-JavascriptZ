@@ -14,6 +14,7 @@ public final class JavetScriptNodeEvaluatorFactory implements ScriptEvaluatorFac
     private final JavetEnginePool<NodeRuntime> enginePool;
 
     private JavetScriptNodeEvaluatorFactory(JavetEngineConfig config) {
+        if (true) throw new UnsupportedOperationException("Node runtime is not supported");
         this.enginePool = new JavetEnginePool<>(config);
 
     }
