@@ -37,15 +37,6 @@ public final class JavetScriptEvaluatorFactory implements ScriptEvaluatorFactory
                 public void close() {
                     try {
                         super.close();
-
-                        if (runtime != null && !runtime.isClosed()) {
-                            try {
-                                runtime.lowMemoryNotification();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-
                         if (engine != null && !engine.isClosed()) {
                             engine.close();
                         }

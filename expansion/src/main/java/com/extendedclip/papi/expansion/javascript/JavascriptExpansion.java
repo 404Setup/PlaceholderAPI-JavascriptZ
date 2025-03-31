@@ -98,7 +98,7 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         }
 
         int v8_pool_size = getInt("v8_pool_size", 10);
-        ScriptEngine scriptEngine = ScriptEngine.fromString((String) get("js_engine", "quickjs"));
+        ScriptEngine scriptEngine = ScriptEngine.fromString(getString("js_engine", "quickjs"));
         ExpansionUtils.infoLog("Using " + scriptEngine + " Engine");
         ExpansionUtils.warnLog("Loading/downloading dependencies is about to begin. During this time, if the server lags, this is normal.");
         ExpansionUtils.warnLog("If the server is unresponsive for a long time, check that you can connect to central smoothly. You may need to change the mirror in the configuration file.");
@@ -123,9 +123,13 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
             case V8:
                 DependLoader.loadV8(false);
                 this.scriptEvaluatorFactory = JavetScriptEvaluatorFactory.create(v8UseGCBeforeEngineClose, v8_pool_size);
+                break;
             case V8Node:
                 DependLoader.loadV8(true);
                 this.scriptEvaluatorFactory = JavetScriptNodeEvaluatorFactory.create(v8UseGCBeforeEngineClose, v8_pool_size);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + scriptEngine);
         }
 
         final HeaderWriter headerWriter = HeaderWriter.fromJar(SELF_JAR_URL);
@@ -211,19 +215,19 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         V8("v8"),
         V8Node("v8_node");
 
-        private final String engineName;
+        private final String name;
 
         ScriptEngine(String engineName) {
-            this.engineName = engineName;
+            this.name = engineName;
         }
 
         public static String toString(ScriptEngine engine) {
             return engine.getEngineName();
         }
 
-        public static ScriptEngine fromString(String engineName) {
+        public static ScriptEngine fromString(@NotNull String engineName) {
             for (ScriptEngine engine : ScriptEngine.values()) {
-                if (engine.getEngineName().equalsIgnoreCase(engineName)) {
+                if (engineName.equalsIgnoreCase(engine.toString())) {
                     return engine;
                 }
             }
@@ -237,7 +241,7 @@ public class JavascriptExpansion extends PlaceholderExpansion implements Cacheab
         }
 
         public String getEngineName() {
-            return engineName;
+            return name;
         }
     }
 }
