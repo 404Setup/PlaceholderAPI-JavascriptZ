@@ -46,4 +46,4 @@ expansions:
 If you find issues, please report them to me, not PAPI, 
 as they may have been introduced by my changes and I need to confirm who caused the issue.
 
-[Download](https://github.com/404Setup/Placeholder-JavascriptZ/releases)
+[Download](https://github.com/404Setup/PlaceholderAPI-JavascriptZ/releases)
